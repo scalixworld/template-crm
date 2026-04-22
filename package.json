@@ -68,7 +68,7 @@
     "id": "crm",
     "name": "CRM System",
     "description": "Complete CRM with customer management, lead tracking, sales pipeline, and analytics",
-    "repository": "https://github.com/scalix-world/scalix/scaffold-templates-crm.git",
+    "repository": "https://github.com/scalixworld/scalix/scaffold-templates-crm.git",
     "branch": "main",
     "tags": ["crm", "sales", "customers", "leads", "business"],
     "postInstall": [

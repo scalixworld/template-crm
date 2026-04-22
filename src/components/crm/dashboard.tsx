@@ -3,6 +3,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
   Users,
   Target,
   DollarSign,
@@ -10,19 +18,19 @@ import {
   Activity,
   Calendar,
   BarChart3,
-  PieChart,
-  Plus,
-  Eye,
   MessageSquare,
   CheckCircle,
   Clock,
-  AlertTriangle
+  Eye,
+  ListTodo,
 } from "lucide-react"
 import {
   mockDashboardStats,
   mockSalesPipeline,
+  mockDeals,
+  mockTasks,
   getRecentActivities,
-  getUpcomingTasks
+  getUpcomingTasks,
 } from "../../data/mockData"
 
 interface MetricCardProps {
@@ -65,8 +73,17 @@ function MetricCard({ title, value, change, changeType, icon, description }: Met
 export function CRMDashboard() {
   const stats = mockDashboardStats
   const pipeline = mockSalesPipeline
-  const recentActivities = getRecentActivities(5)
+  const recentActivities = getRecentActivities(10)
   const upcomingTasks = getUpcomingTasks(5)
+  const tasksDueToday = mockTasks.filter(t => {
+    if (!t.dueDate || t.status === 'completed' || t.status === 'cancelled') return false
+    const today = new Date()
+    return t.dueDate.toDateString() === today.toDateString()
+  }).length
+  const topDeals = [...mockDeals]
+    .filter(d => d.stage !== 'closed-lost')
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5)
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -88,6 +105,30 @@ export function CRMDashboard() {
       case 'low': return 'text-green-600 bg-green-50'
       default: return 'text-gray-600 bg-gray-50'
     }
+  }
+
+  const getStageBadge = (stage: string) => {
+    const colors: Record<string, string> = {
+      'prospecting': 'bg-blue-100 text-blue-800',
+      'qualification': 'bg-purple-100 text-purple-800',
+      'proposal': 'bg-yellow-100 text-yellow-800',
+      'negotiation': 'bg-orange-100 text-orange-800',
+      'closed-won': 'bg-green-100 text-green-800',
+      'closed-lost': 'bg-red-100 text-red-800',
+    }
+    const labels: Record<string, string> = {
+      'prospecting': 'Prospecting',
+      'qualification': 'Qualification',
+      'proposal': 'Proposal',
+      'negotiation': 'Negotiation',
+      'closed-won': 'Closed Won',
+      'closed-lost': 'Closed Lost',
+    }
+    return (
+      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[stage] || 'bg-gray-100 text-gray-800'}`}>
+        {labels[stage] || stage}
+      </span>
+    )
   }
 
   return (
@@ -115,42 +156,43 @@ export function CRMDashboard() {
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Total Customers"
-          value={stats.totalCustomers}
-          change="+12%"
-          changeType="positive"
-          icon={<Users className="h-4 w-4" />}
-        />
-        <MetricCard
-          title="Active Leads"
-          value={stats.totalLeads}
-          change="+8%"
-          changeType="positive"
-          icon={<Target className="h-4 w-4" />}
-        />
-        <MetricCard
-          title="Pipeline Value"
-          value={`$${(stats.pipelineValue / 1000).toFixed(0)}k`}
-          change="+15%"
+          title="Total Revenue"
+          value={`$${(stats.totalRevenue / 1000).toFixed(0)}k`}
+          change="+18%"
           changeType="positive"
           icon={<DollarSign className="h-4 w-4" />}
         />
         <MetricCard
-          title="Conversion Rate"
-          value={`${stats.conversionRate}%`}
-          change="+5%"
+          title="Active Deals"
+          value={mockDeals.filter(d => !d.stage.includes('closed')).length}
+          change="+3 new"
+          changeType="positive"
+          icon={<Target className="h-4 w-4" />}
+        />
+        <MetricCard
+          title="New Leads"
+          value={stats.totalLeads}
+          change="+8%"
           changeType="positive"
           icon={<TrendingUp className="h-4 w-4" />}
         />
+        <MetricCard
+          title="Tasks Due"
+          value={tasksDueToday > 0 ? tasksDueToday : upcomingTasks.length}
+          change={`${upcomingTasks.length} upcoming`}
+          changeType="neutral"
+          icon={<ListTodo className="h-4 w-4" />}
+        />
       </div>
 
+      {/* Sales Pipeline + Recent Activity */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         {/* Sales Pipeline */}
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Sales Pipeline</CardTitle>
             <CardDescription>
-              Current deal distribution across pipeline stages
+              Deal flow: Prospecting &rarr; Qualified &rarr; Proposal &rarr; Negotiation &rarr; Closed
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -164,24 +206,30 @@ export function CRMDashboard() {
                   </div>
                 </div>
                 <Progress
-                  value={(stage.value / Math.max(...pipeline.map(p => p.value))) * 100}
+                  value={(stage.value / Math.max(...pipeline.map(p => p.value), 1)) * 100}
                   className="h-2"
                 />
               </div>
             ))}
+            <div className="pt-2 border-t flex items-center justify-between text-sm">
+              <span className="font-medium text-muted-foreground">Total Pipeline Value</span>
+              <span className="font-bold text-lg">
+                ${(pipeline.reduce((sum, s) => sum + s.value, 0) / 1000).toFixed(0)}k
+              </span>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
+        {/* Recent Activity Feed */}
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>
-              Latest updates from your CRM
+              Last 10 activities from your team
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
               {recentActivities.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-3">
                   <div className="mt-1 text-muted-foreground">
@@ -195,6 +243,7 @@ export function CRMDashboard() {
                       <p className="text-xs text-muted-foreground">
                         {activity.userName}
                       </p>
+                      <span className="text-xs text-muted-foreground">&middot;</span>
                       <p className="text-xs text-muted-foreground">
                         {activity.createdAt.toLocaleDateString()}
                       </p>
@@ -207,7 +256,47 @@ export function CRMDashboard() {
         </Card>
       </div>
 
+      {/* Top Deals Table + Upcoming Tasks */}
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Top Deals */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Deals</CardTitle>
+            <CardDescription>
+              Highest value deals in your pipeline
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Deal</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead className="text-right">Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topDeals.map((deal) => (
+                    <TableRow key={deal.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-sm">{deal.title}</div>
+                          <div className="text-xs text-muted-foreground">{deal.assignedTo}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStageBadge(deal.stage)}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        ${deal.value.toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Upcoming Tasks */}
         <Card>
           <CardHeader>
@@ -218,10 +307,10 @@ export function CRMDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingTasks.slice(0, 4).map((task) => (
+              {upcomingTasks.slice(0, 5).map((task) => (
                 <div key={task.id} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                  <div className="space-y-1 flex-1 min-w-0 mr-2">
+                    <p className="text-sm font-medium leading-none truncate">
                       {task.title}
                     </p>
                     <div className="flex items-center space-x-2">
@@ -231,8 +320,9 @@ export function CRMDashboard() {
                       >
                         {task.priority}
                       </Badge>
-                      <p className="text-xs text-muted-foreground">
-                        Due {task.dueDate?.toLocaleDateString()}
+                      <p className="text-xs text-muted-foreground flex items-center">
+                        <Clock className="mr-1 h-3 w-3" />
+                        {task.dueDate?.toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -242,46 +332,27 @@ export function CRMDashboard() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common CRM tasks and shortcuts
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="h-16 flex-col">
-                <Users className="h-5 w-5 mb-1" />
-                Add Customer
-              </Button>
-              <Button variant="outline" className="h-16 flex-col">
-                <Target className="h-5 w-5 mb-1" />
-                Create Lead
-              </Button>
-              <Button variant="outline" className="h-16 flex-col">
-                <DollarSign className="h-5 w-5 mb-1" />
-                New Deal
-              </Button>
-              <Button variant="outline" className="h-16 flex-col">
-                <Calendar className="h-5 w-5 mb-1" />
-                Schedule Task
-              </Button>
-            </div>
-            <div className="pt-4 border-t">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Average deal size</span>
-                <span className="font-medium">${stats.avgDealSize.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-muted-foreground">Monthly growth</span>
-                <span className={`font-medium ${stats.monthlyGrowth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.monthlyGrowth > 0 ? '+' : ''}{stats.monthlyGrowth}%
-                </span>
+            {/* Quick Actions */}
+            <div className="mt-6 pt-4 border-t">
+              <p className="text-sm font-medium mb-3">Quick Actions</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" className="h-10 text-xs">
+                  <Users className="h-3.5 w-3.5 mr-1.5" />
+                  Add Customer
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 text-xs">
+                  <Target className="h-3.5 w-3.5 mr-1.5" />
+                  Create Lead
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 text-xs">
+                  <DollarSign className="h-3.5 w-3.5 mr-1.5" />
+                  New Deal
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 text-xs">
+                  <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                  Schedule Task
+                </Button>
               </div>
             </div>
           </CardContent>

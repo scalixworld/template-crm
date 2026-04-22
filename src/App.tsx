@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { CRMDashboard } from './components/crm/dashboard'
 import { Customers } from './components/crm/customers'
+import { Leads } from './components/crm/leads'
+import { Deals } from './components/crm/deals'
+import { Contacts } from './components/crm/contacts'
+import { Tasks } from './components/crm/tasks'
+import { Reports } from './components/crm/reports'
+import { Settings } from './components/crm/settings'
 import { Button } from './components/ui/button'
-import { Menu, X, Home, Users, Target, DollarSign, BarChart3, Settings, MessageSquare, Calendar } from 'lucide-react'
+import { Menu, X, Home, Users, Target, DollarSign, BarChart3, Settings as SettingsIcon, MessageSquare, Calendar } from 'lucide-react'
 
 type ViewType = 'dashboard' | 'customers' | 'leads' | 'deals' | 'contacts' | 'tasks' | 'reports' | 'settings'
 
@@ -18,7 +24,7 @@ function App() {
     { name: 'Contacts', href: 'contacts', icon: MessageSquare, current: currentView === 'contacts' },
     { name: 'Tasks', href: 'tasks', icon: Calendar, current: currentView === 'tasks' },
     { name: 'Reports', href: 'reports', icon: BarChart3, current: currentView === 'reports' },
-    { name: 'Settings', href: 'settings', icon: Settings, current: currentView === 'settings' },
+    { name: 'Settings', href: 'settings', icon: SettingsIcon, current: currentView === 'settings' },
   ]
 
   const renderCurrentView = () => {
@@ -28,17 +34,17 @@ function App() {
       case 'customers':
         return <Customers />
       case 'leads':
-        return <div className="p-8 text-center text-muted-foreground">Leads management coming soon...</div>
+        return <Leads />
       case 'deals':
-        return <div className="p-8 text-center text-muted-foreground">Deal pipeline coming soon...</div>
+        return <Deals />
       case 'contacts':
-        return <div className="p-8 text-center text-muted-foreground">Contact management coming soon...</div>
+        return <Contacts />
       case 'tasks':
-        return <div className="p-8 text-center text-muted-foreground">Task management coming soon...</div>
+        return <Tasks />
       case 'reports':
-        return <div className="p-8 text-center text-muted-foreground">Reports & analytics coming soon...</div>
+        return <Reports />
       case 'settings':
-        return <div className="p-8 text-center text-muted-foreground">CRM settings coming soon...</div>
+        return <Settings />
       default:
         return <CRMDashboard />
     }
