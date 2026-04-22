@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { CRMDashboard } from './components/crm/dashboard'
 import { Customers } from './components/crm/customers'
 import { Leads } from './components/crm/leads'
@@ -10,45 +11,19 @@ import { Settings } from './components/crm/settings'
 import { Button } from './components/ui/button'
 import { Menu, X, Home, Users, Target, DollarSign, BarChart3, Settings as SettingsIcon, MessageSquare, Calendar } from 'lucide-react'
 
-type ViewType = 'dashboard' | 'customers' | 'leads' | 'deals' | 'contacts' | 'tasks' | 'reports' | 'settings'
+const navigation = [
+  { name: 'Dashboard', to: '/', icon: Home },
+  { name: 'Customers', to: '/customers', icon: Users },
+  { name: 'Leads', to: '/leads', icon: Target },
+  { name: 'Deals', to: '/deals', icon: DollarSign },
+  { name: 'Contacts', to: '/contacts', icon: MessageSquare },
+  { name: 'Tasks', to: '/tasks', icon: Calendar },
+  { name: 'Reports', to: '/reports', icon: BarChart3 },
+  { name: 'Settings', to: '/settings', icon: SettingsIcon },
+]
 
-function App() {
+function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard')
-
-  const navigation = [
-    { name: 'Dashboard', href: 'dashboard', icon: Home, current: currentView === 'dashboard' },
-    { name: 'Customers', href: 'customers', icon: Users, current: currentView === 'customers' },
-    { name: 'Leads', href: 'leads', icon: Target, current: currentView === 'leads' },
-    { name: 'Deals', href: 'deals', icon: DollarSign, current: currentView === 'deals' },
-    { name: 'Contacts', href: 'contacts', icon: MessageSquare, current: currentView === 'contacts' },
-    { name: 'Tasks', href: 'tasks', icon: Calendar, current: currentView === 'tasks' },
-    { name: 'Reports', href: 'reports', icon: BarChart3, current: currentView === 'reports' },
-    { name: 'Settings', href: 'settings', icon: SettingsIcon, current: currentView === 'settings' },
-  ]
-
-  const renderCurrentView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <CRMDashboard />
-      case 'customers':
-        return <Customers />
-      case 'leads':
-        return <Leads />
-      case 'deals':
-        return <Deals />
-      case 'contacts':
-        return <Contacts />
-      case 'tasks':
-        return <Tasks />
-      case 'reports':
-        return <Reports />
-      case 'settings':
-        return <Settings />
-      default:
-        return <CRMDashboard />
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -94,29 +69,32 @@ function App() {
             {navigation.map((item) => {
               const Icon = item.icon
               return (
-                <button
+                <NavLink
                   key={item.name}
-                  onClick={() => {
-                    setCurrentView(item.href as ViewType)
-                    setSidebarOpen(false)
-                  }}
-                  className={`
+                  to={item.to}
+                  end={item.to === '/'}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) => `
                     w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors
-                    ${item.current
+                    ${isActive
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700 dark:bg-blue-900/50 dark:text-blue-200'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
                     }
                   `}
                 >
-                  <Icon
-                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                      item.current
-                        ? 'text-blue-500 dark:text-blue-300'
-                        : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
-                    }`}
-                  />
-                  {item.name}
-                </button>
+                  {({ isActive }) => (
+                    <>
+                      <Icon
+                        className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                          isActive
+                            ? 'text-blue-500 dark:text-blue-300'
+                            : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
+                        }`}
+                      />
+                      {item.name}
+                    </>
+                  )}
+                </NavLink>
               )
             })}
           </div>
@@ -152,11 +130,29 @@ function App() {
       <div className="lg:pl-64">
         <main className="p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            {renderCurrentView()}
+            <Routes>
+              <Route path="/" element={<CRMDashboard />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/leads" element={<Leads />} />
+              <Route path="/deals" element={<Deals />} />
+              <Route path="/contacts" element={<Contacts />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
           </div>
         </main>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppLayout />
+    </BrowserRouter>
   )
 }
 
